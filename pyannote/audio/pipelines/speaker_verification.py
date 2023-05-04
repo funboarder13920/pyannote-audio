@@ -27,6 +27,7 @@ try:
 except ImportError:
     from backports.cached_property import cached_property
 
+from pathlib import Path
 from typing import Text, Union
 
 import numpy as np
@@ -239,9 +240,13 @@ class SpeechBrainPretrainedSpeakerEmbedding:
         self.embedding = embedding
         self.device = device
 
+        self.savedir = f"{CACHE_DIR}/speechbrain"
+        if Path(self.embedding).exists():
+            self.savedir = self.embedding
+
         self.classifier_ = SpeechBrain_EncoderClassifier.from_hparams(
             source=self.embedding,
-            savedir=f"{CACHE_DIR}/speechbrain",
+            savedir=self.savedir,
             run_opts={"device": self.device},
             use_auth_token=use_auth_token,
         )
