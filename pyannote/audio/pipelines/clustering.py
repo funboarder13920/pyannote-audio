@@ -651,7 +651,20 @@ class FINCHClustering(BaseClustering):
         )
 
         # perform agglomerative clustering on centroids
-        dendrogram = linkage(centroids, metric=self.metric, method=self.method)
+        # centroid, median, and Ward method only support "euclidean" metric
+        # therefore we unit-normalize embeddings to somehow make them "euclidean"
+        if self.metric == "cosine" and self.method in ["centroid", "median", "ward"]:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                centroids /= np.linalg.norm(centroids, axis=-1, keepdims=True)
+            dendrogram: np.ndarray = linkage(
+                centroids, method=self.method, metric="euclidean"
+            )
+
+        # other methods work just fine with any metric
+        else:
+            dendrogram: np.ndarray = linkage(
+                centroids, method=self.method, metric=self.metric
+            )
         klusters = fcluster(dendrogram, self.threshold, criterion="distance") - 1
 
         # update clusters
